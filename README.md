@@ -7,15 +7,15 @@
 	
 	Options:
 	
-	  -b, --buildruns a jekyll build
-	  -c, --cleancleans out the site output directory
-	  -n, --new  creates a new post
-	  -p, --publish  copies site via rcp/rsync to remote server
-	  -s, --server   runs the jekyll server
+	  -b, --build   runs a jekyll build
+	  -c, --clean   cleans out the site output directory
+	  -n, --new     creates a new post
+	  -p, --publish copies site via rcp/rsync to remote server
+	  -s, --server  runs the jekyll server
 	
 	Modifier:
 	
-	  -d, --draftcreate draft post or run build/serve w/ drafts
+	  -d, --draft  create draft post or run build/serve w/ drafts
 	
 	Examples:
 	
