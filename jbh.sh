@@ -84,7 +84,7 @@ function fnNew {
 		fi
 		_path="/_drafts/"
 	else
-		_title="$2"
+		_title="$1"
 		if [ "$2" == "" ]; then
 			_date=$(date +%Y-%m-%d)
 		else
