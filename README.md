@@ -11,7 +11,8 @@
 	  -c, --clean   cleans out the site output directory
 	  -n, --new     creates a new post
 	  -p, --publish copies site via rcp/rsync to remote server
-	  -s, --server  runs the jekyll server
+	  -s, --serve   runs the jekyll server
+	  -v, --version displays version of the script
 	
 	Modifier:
 	
@@ -38,3 +39,37 @@
 	Report bugs to <github.com/alanbarber/jbh>
 
 ````
+
+### Install
+
+Copy the *jbh.sh* script into the base folder of the your Jekyll site.
+
+Open the script with your editor of choice and there are several settings you
+will need to setup for publishing to your remote server.
+
+### How To Use
+
+#### Create Post
+
+````
+	$ jbh.sh --new "Enter Your Post Title"
+```` 
+
+This will create a properly formated Jekyll post file and a cororlating asset
+folder for storing photos and files that are part of your post.
+
+#### Build The Site
+
+````
+	$ jbh.sh --build
+````
+
+This runs the Jekyll build to update the local copy of your site.
+
+#### Publish To Your Web Server
+
+````
+	$ jbh.sh --publish
+````
+
+This pushes the changes via scp or rsync to your remote server

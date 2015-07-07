@@ -1,24 +1,37 @@
 #/bin/bash
 #----------------------------------------
 # JBH - Jekyll Blog Helper
-# ver: 1.0.0
+_version="1.1.0"
 # http://github.com/alanbarber/jbh
 #----------------------------------------
 # Settings
-_sitePath="_site"
-_publishUseRsync="false"
+# Always set leading and trailing slashes in path!
+
+_sitePath="/_site/"	
+_postPath="/_posts/"
+_draftPath="/_drafts/"
+_assetPath="/assets/"
+_excerptSeparator="/--more--/"
+
+_publishUseRsync="true"
 _publishUser="username"
-_publishServer="domain.tld"
+_publishServer="server.tld"
 _publishPath="/home/username/public_html/"
 
 ########################################
 # DO NOT EDIT BELOW THIS LINE
 ########################################
+# Version
+function fnVersion {
+	echo "Jekyll Blog Helper $_version"
+	echo "Report bugs to <github.com/alanbarber/jbh>"
+	echo ""
+}
 
 # Help Info
 function fnHelpInfo {
 	echo "Usage: jbh.sh [OPTIONS]..."
-	echo "Jekyll Blog Helper - A command line blog management tool"
+	echo "Jekyll Blog Helper $_version - A command line blog management tool"
 	echo ""
 	echo "Options:"
 	echo ""
@@ -26,7 +39,8 @@ function fnHelpInfo {
 	echo "  -c, --clean    cleans out the site output directory"
 	echo "  -n, --new      creates a new post"
 	echo "  -p, --publish  copies site via rcp/rsync to remote server"
-	echo "  -s, --server   runs the jekyll server"
+	echo "  -s, --serve    runs the jekyll server"
+	echo "  -v, --version  displays version of the script"
 	echo ""
 	echo "Modifier:"
 	echo ""
@@ -58,9 +72,9 @@ function fnBuild {
 	echo "Running Jekyll build..."
 	if [[ "$1" == "-d" || "$1" == "--draft" ]]; then
 		echo "Including drafts..."
-		jekyll build --destination "./$_sitePath" --drafts
+		jekyll build --destination ".$_sitePath" --drafts
 	else
-		jekyll build --destination "./$_sitePath"
+		jekyll build --destination ".$_sitePath"
 	fi
 }
 # Clean
@@ -68,8 +82,8 @@ function fnClean {
 	echo "Cleaning site directory '$_sitePath'..."
 	# we remove and recreate the dir to make sure all files
 	# including hidden dot files (.htaccess, etc) are gone
-	rm -rf ./$_sitePath
-	mkdir -p ./$_sitePath/
+	rm -rf .$_sitePath
+	mkdir -p .$_sitePath
 }
 # New Post
 function fnNew {
@@ -82,7 +96,7 @@ function fnNew {
 		else
 			_date=$(date -d $3 +%Y-%m-%d)
 		fi
-		_path="/_drafts/"
+		_path="$_draftPath"
 	else
 		_title="$1"
 		if [ "$2" == "" ]; then
@@ -90,7 +104,7 @@ function fnNew {
 		else
 			_date=$(date -d $2 +%Y-%m-%d)
 		fi		
-		_path="/_posts/"
+		_path="$_postPath"
 	fi
 	# setup vars
 	# lowercase, remove non alphanumerics or spaces, convert spaces to dash
@@ -99,7 +113,7 @@ function fnNew {
 	_fileTitle=$(echo $_fileTitle | sed -e 's/\s/-/g')
 
 	_outputFile="$_path$_date-$_fileTitle.md"
-	_assetDir="/assets/$(date -d $_date +%Y)/$(date -d $_date +%m)/$(date -d $_date +%d)/$_fileTitle"
+	_assetDir="$_assetPath$(date -d $_date +%Y)/$(date -d $_date +%m)/$(date -d $_date +%d)/$_fileTitle"
 
 	# Create file and write Jekyll header info
 	echo "  Creating file '$_outputFile'..."
@@ -112,7 +126,7 @@ function fnNew {
 	echo "date: $_date" >> ".$_outputFile"
 	echo "categories: []" >> ".$_outputFile"
 	echo "---" >> ".$_outputFile"
-	echo -e "\n\n/--more--/\n\n[assets]: $_assetDir" >> ".$_outputFile"
+	echo -e "\n\n$_excerptSeparator\n\n[assets]: $_assetDir" >> ".$_outputFile"
 	
 	# Create asset directory for post
 	echo "  Creating asset folder '$_assetDir'"
@@ -128,9 +142,9 @@ function fnPublish {
 		exit 1
 	else
 		if [[ "$_publishUseRsync" == "" || "$_publishUseRsync" == "0" || "$_publishUseRsync" == "false" ]]; then
-			scp -r ./$_sitePath/* $_publishUser@$_publishServer:$_publishPath
+			scp -r .$_sitePath* $_publishUser@$_publishServer:$_publishPath
 		else
-			rsync --compress --recursive --checksum --itemize-changes --delete ./$_sitePate/* $_publishUser@$_publishServer:$_publishPath
+			rsync --compress --recursive --checksum --itemize-changes --delete .$_sitePate* $_publishUser@$_publishServer:$_publishPath
 		fi
 	fi
 }
@@ -139,9 +153,9 @@ function fnServe {
 	echo "Running Jekyll server..."
 	if [[ "$1" == "-d" || "$1" == "--draft" ]]; then
 		echo "Including drafts..."
-		jekyll serve --destination "./$_sitePath" --drafts
+		jekyll serve --destination ".$_sitePath" --drafts
 	else
-		jekyll serve --destination "./$_sitePath"
+		jekyll serve --destination ".$_sitePath"
 	fi
 }
 # Process command line# Parse options
@@ -156,6 +170,9 @@ case "$1" in
 		fnClean
 		;;
 	--clean)
+		fnClean
+		;;
+	--clear)
 		fnClean
 		;;
 	-n)
@@ -175,6 +192,15 @@ case "$1" in
 		;;
 	--serve)
 		fnServe "$2"
+		;;
+	--server)
+		fnServe "$2"
+		;;
+	-v)
+		fnVersion
+		;;
+	--version)
+		fnVersion
 		;;
 	*)
 		fnHelpInfo
