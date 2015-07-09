@@ -1,18 +1,20 @@
 #/bin/bash
 #----------------------------------------
 # JBH - Jekyll Blog Helper
-_version="1.1.0"
+_version="1.2.0"
 # http://github.com/alanbarber/jbh
 #----------------------------------------
 # Settings
-# Always set leading and trailing slashes in path!
+# Note: Always set leading and trailing slashes in path! Paths are relative.
 
 _sitePath="/_site/"	
 _postPath="/_posts/"
 _draftPath="/_drafts/"
 _assetPath="/assets/"
+
 _excerptSeparator="/--more--/"
 
+# Remote Server Settings
 _publishUseRsync="true"
 _publishUser="username"
 _publishServer="server.tld"
@@ -21,13 +23,35 @@ _publishPath="/home/username/public_html/"
 ########################################
 # DO NOT EDIT BELOW THIS LINE
 ########################################
+# Helper Function
+function fnConvertTitleToFilenameFormat {
+	# lowercase, remove non alphanumerics and non spaces, convert spaces to dash
+	local _title=$(echo $1 | sed -e 's/\(.*\)/\L\1/')
+	_title=$(echo $_title | sed -e 's/[[:punct:]]//g')
+	_title=$(echo $_title | sed -e 's/\s/-/g')
+	echo "$_title"
+}
+function fnGetFileNameFromDateAndTitle { 
+	local _title=$(fnConvertTitleToFilenameFormat "$2")
+	local _date=$(date -d "$1" +%Y-%m-%d)
+	echo "$_date-$_title.md"
+
+}
+function fnGetAssetDirectoryFromDateAndTitle {
+	if [[ "$_assetPath" != "" ]]; then
+		local _title=$(fnConvertTitleToFilenameFormat "$2")
+		echo "$_assetPath$(date -d $1 +%Y)/$(date -d $1 +%m)/$(date -d $1 +%d)/$_title"
+	else
+		echo ""
+	fi
+}
+# Feature Functions
 # Version
 function fnVersion {
 	echo "Jekyll Blog Helper $_version"
 	echo "Report bugs to <github.com/alanbarber/jbh>"
 	echo ""
 }
-
 # Help Info
 function fnHelpInfo {
 	echo "Usage: jbh.sh [OPTIONS]..."
@@ -37,14 +61,28 @@ function fnHelpInfo {
 	echo ""
 	echo "  -b, --build    runs a jekyll build"
 	echo "  -c, --clean    cleans out the site output directory"
-	echo "  -n, --new      creates a new post"
+	echo "  -h, --help     displays help info for the script"
+	echo "  -l, --list     lists all posts or drafts"
+	echo "  -m, --move     moves a draft to post or post to draft status"
+	echo "  -n, --new      creates a new post or draft"
 	echo "  -p, --publish  copies site via rcp/rsync to remote server"
 	echo "  -s, --serve    runs the jekyll server"
 	echo "  -v, --version  displays version of the script"
 	echo ""
-	echo "Modifier:"
+	echo "Modifiers:"
 	echo ""
-	echo "  -d, --draft    create draft post or run build/serve w/ drafts" 
+	echo "  --build:"
+	echo "    -d, --draft  includes drafts in jekyll build"
+	echo "  --list:"
+	echo "    -d, --draft  lists draft posts"
+	echo "    -p, --post   lists posts"
+	echo "  --new:"
+	echo "    -d, --draft  creates a new draft post"
+	echo "  --move:"
+	echo "    -d, --draft  moves a draft to post"
+	echo "    -p, --post   moves a post to draft"
+	echo "  --serve:"
+	echo "    -d, --draft  includes draft in jekyll server"
 	echo ""
 	echo "Examples:"
 	echo ""
@@ -63,6 +101,12 @@ function fnHelpInfo {
 	echo "  jbh.sh --publish"
 	echo "    Runs rcp/rsync to copy built site to a remote server"
 	echo "    * NOTE: Server settings are stored at top of script"
+	echo ""
+	echo "  jbh.sh --list \"*2015*\""
+	echo "    Lists all posts that have '2015' in the file name"
+	echo ""
+	echo "  jbh.sh --move --draft \"2015-01-01-blog-title.md\""
+	echo "    Moves the matching file from draft to post folder"
 	echo ""
 	echo "Report bugs to <github.com/alanbarber/jbh>"
 	echo ""
@@ -85,35 +129,73 @@ function fnClean {
 	rm -rf .$_sitePath
 	mkdir -p .$_sitePath
 }
+# List
+function fnList {
+	if [[ "$1" == "-d" || "$1" == "--draft" ]]; then
+		echo "Listing draft posts..."
+		local _listPath="$_draftPath"
+		local _listSearch="$2"
+	elif [[ "$1" == "-p" || "$1" == "--post" ]]; then
+		echo "Listing posts..."
+		local _listPath="$_postPath"
+		local _listSearch="$2"		
+	else
+		echo "Listing posts..."
+		local _listPath="$_postPath"
+		local _listSearch="$1"
+	fi
+	ls -Ax1 .$_listPath$_listSearch
+} 
+# Move Posts
+function fnMove {
+	local _moveFile="$2"
+	if [[ ("$1" == "-d" || "$1" == "--draft") && "$_moveFile" != "" ]]; then
+		echo "Moving draft to post..."
+		if [ -e ".$_draftPath$_moveFile" ]; then
+			mv -f .$_draftPath$_moveFile .$_postPath$_moveFile
+		else
+			echo "  Error: Unable to find draft '$_moveFile'"
+			exit 1
+		fi
+	elif [[ ("$1" == "-p" || "$1" == "--post") && "$_moveFile" != "" ]]; then
+		echo "Moving post to draft..."
+		if [[ -e ".$_postPath$_moveFile" || -e "" ]]; then
+			mv -f .$_postPath$_moveFile .$_draftPath$_moveFile
+		else
+			echo "  Error: Unable to file post '$_moveFile'"
+			exit 1
+		fi
+	else
+		echo "  Error: No file specified to move"
+		echo ""
+		exit 1
+	fi
+}
 # New Post
 function fnNew {
 	echo "Creating new post..."
 	if [[ "$1" == "-d" || "$1" == "--draft" ]]; then
 		echo "  Making post a draft..."
-		_title="$2"
+		local _title="$2"
 		if [ "$3" == "" ]; then
-			_date=$(date +%Y-%m-%d)
+			local _date=$(date +%Y-%m-%d)
 		else
-			_date=$(date -d $3 +%Y-%m-%d)
+			local _date=$(date -d $3 +%Y-%m-%d)
 		fi
-		_path="$_draftPath"
+		local _path="$_draftPath"
 	else
 		_title="$1"
 		if [ "$2" == "" ]; then
-			_date=$(date +%Y-%m-%d)
+			local _date=$(date +%Y-%m-%d)
 		else
-			_date=$(date -d $2 +%Y-%m-%d)
+			local _date=$(date -d $2 +%Y-%m-%d)
 		fi		
-		_path="$_postPath"
+		local _path="$_postPath"
 	fi
 	# setup vars
-	# lowercase, remove non alphanumerics or spaces, convert spaces to dash
-	_fileTitle=$(echo $_title | sed -e 's/\(.*\)/\L\1/')
-	_fileTitle=$(echo $_fileTitle | sed -e 's/[[:punct:]]//g')
-	_fileTitle=$(echo $_fileTitle | sed -e 's/\s/-/g')
-
-	_outputFile="$_path$_date-$_fileTitle.md"
-	_assetDir="$_assetPath$(date -d $_date +%Y)/$(date -d $_date +%m)/$(date -d $_date +%d)/$_fileTitle"
+	local _fileName=$(fnGetFileNameFromDateAndTitle "$_date" "$_title")
+	local _outputFile="$_path$_fileName"
+	local _assetDir=$(fnGetAssetDirectoryFromDateAndTitle "$_date" "$_title")
 
 	# Create file and write Jekyll header info
 	echo "  Creating file '$_outputFile'..."
@@ -125,12 +207,15 @@ function fnNew {
 	echo "title: \"$_title\"" >> ".$_outputFile"
 	echo "date: $_date" >> ".$_outputFile"
 	echo "categories: []" >> ".$_outputFile"
+	echo "tags: []" >> ".$_outputFile"
 	echo "---" >> ".$_outputFile"
-	echo -e "\n\n$_excerptSeparator\n\n[assets]: $_assetDir" >> ".$_outputFile"
 	
-	# Create asset directory for post
-	echo "  Creating asset folder '$_assetDir'"
-	mkdir -p ".$_assetDir"
+	# Create asset directory for post and add markdown link reference to bottom
+	if [[ "_assetDir" != "" ]]; then
+		echo -e "\n\n$_excerptSeparator\n\n[assets]: $_assetDir" >> ".$_outputFile"
+		echo "  Creating asset folder '$_assetDir'"
+		mkdir -p ".$_assetDir"
+	fi
 }
 # Publish
 function fnPublish {
@@ -174,6 +259,18 @@ case "$1" in
 		;;
 	--clear)
 		fnClean
+		;;
+	-l)
+		fnList "$2" "$3"
+		;;
+	--list)
+		fnList "$2" "$3"
+		;;
+	-m)
+		fnMove "$2" "$3"
+		;;
+	--move)
+		fnMove "$2" "$3"
 		;;
 	-n)
 		fnNew "$2" "$3" "$4"
