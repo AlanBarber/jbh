@@ -2,6 +2,10 @@
 
 #Change Log
 
+## Version 1.2.1
+
+ * Fixed a bug in --publish for rsync not using correct site path
+
 ## Version 1.2.0
 
  * Added --list command. Lets you get a raw view of posts and drafts. Includes optional filter.
