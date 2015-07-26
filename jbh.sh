@@ -1,7 +1,7 @@
 #/bin/bash
 #----------------------------------------
 # JBH - Jekyll Blog Helper
-_version="1.2.0"
+_version="1.2.1"
 # http://github.com/alanbarber/jbh
 #----------------------------------------
 # Settings
@@ -229,7 +229,7 @@ function fnPublish {
 		if [[ "$_publishUseRsync" == "" || "$_publishUseRsync" == "0" || "$_publishUseRsync" == "false" ]]; then
 			scp -r .$_sitePath* $_publishUser@$_publishServer:$_publishPath
 		else
-			rsync --compress --recursive --checksum --itemize-changes --delete .$_sitePate* $_publishUser@$_publishServer:$_publishPath
+			rsync --compress --recursive --checksum --itemize-changes --delete .$_sitePath $_publishUser@$_publishServer:$_publishPath
 		fi
 	fi
 }

@@ -189,5 +189,5 @@ See the history in [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 
-JBH is license under the [Apache 2.0 License][LICENSE]
+JBH is license under the [Apache 2.0 License](LICENSE)
 
