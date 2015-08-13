@@ -1,4 +1,6 @@
 # jbh
+
+[![Join the chat at https://gitter.im/AlanBarber/jbh](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/AlanBarber/jbh?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 (JBH) Jekyll Blog Helper - A bash shell script to help manage a Jekyll weblog
 site
 
