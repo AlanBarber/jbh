@@ -1,3 +1,5 @@
+_NOTE: This app is no longer actively maintained! While it may still work with Jekyll it will not be updated in the future!_
+
 # jbh
 (JBH) Jekyll Blog Helper - A bash shell script to help manage a Jekyll weblog
 site
